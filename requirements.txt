@@ -1,0 +1,9 @@
+aiohttp
+python-dotenv
+aiolimiter
+rich
+networkx
+matplotlib
+graphviz
+jinja2
+pyvis
