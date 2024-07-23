@@ -3,18 +3,42 @@ import code_analyzer
 from call_graph import generate_call_graph
 from generate_documentation import generate_documentation
 import os
+import json
+
+LAST_PATH_FILE = 'last_path.json'
+
+def save_last_path(path):
+    with open(LAST_PATH_FILE, 'w') as f:
+        json.dump({'last_path': path}, f)
+
+def load_last_path():
+    try:
+        with open(LAST_PATH_FILE, 'r') as f:
+            data = json.load(f)
+            return data.get('last_path', '')
+    except FileNotFoundError:
+        return ''
 
 async def main_menu():
     print("Welcome to the Codebase Analysis Tool")
     
     while True:
-        path = input("Enter the path to the codebase (or 'q' to quit): ") #/home/heidornj/workspaces/aider-chat/autogen/autogen/
+        last_path = load_last_path()
+        if last_path:
+            path = input(f"Enter the path to the codebase (or press Enter to use last path: {last_path}, or 'q' to quit): ")
+            if path == '':
+                path = last_path
+        else:
+            path = input("Enter the path to the codebase (or 'q' to quit): ")
+        
         if path.lower() == 'q':
             break
 
         if not os.path.exists(path):
             print(f"Error: The path '{path}' does not exist.")
             continue
+
+        save_last_path(path)
 
         while True:
             print("\nMain Menu:")
