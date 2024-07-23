@@ -611,48 +611,6 @@ async def analyze_codebase(path):
     
     console.print(f"[bold blue]Full analysis results saved to analysis_results.json[/bold blue]")
 
-async def generate_call_graph(path):
-    console.print("[cyan]Generating call graph...[/cyan]")
-    call_graph = process_directory(path)
-    visualize_call_graph(call_graph, "codebase_call_graph")
-    console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
-
-async def generate_documentation(path):
-    console.print("[cyan]Generating documentation...[/cyan]")
-    analysis_results = load_analysis_results('analysis_results.json')
-    call_graph = process_directory(path)
-    generate_documentation(analysis_results, call_graph, 'docs')
-    console.print("[green]Documentation generated in docs/ folder[/green]")
-
-# New function to analyze call graph with LLM
-async def analyze_call_graph_with_llm(call_graph):
-    graph_summary = f"The call graph contains {call_graph.number_of_nodes()} functions and {call_graph.number_of_edges()} calls between them."
-    most_called = sorted(call_graph.in_degree, key=lambda x: x[1], reverse=True)[:5]
-    graph_summary += "\nMost called functions:\n" + "\n".join([f"{func}: {calls} calls" for func, calls in most_called])
-
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    async with semaphore:
-        async with aiohttp.ClientSession() as session:
-            async with rate_limiter:
-                data = {
-                    "model": "mistralai/mistral-nemo",
-                    "messages": [
-                        {"role": "system", "content": "You are a code analysis assistant. Analyze the given call graph summary and provide insights."},
-                        {"role": "user", "content": f"Analyze the following call graph summary and provide insights on the codebase structure and potential areas for improvement:\n\n{graph_summary}"}
-                    ]
-                }
-                async with session.post(url, headers=headers, json=data) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result['choices'][0]['message']['content']
-                    else:
-                        console.print(f"[bold red]Error: {response.status} - {await response.text()}[/bold red]")
-                        return "Error in analyzing call graph"
-
 if __name__ == "__main__":
-    asyncio.run(main_menu())
+    import asyncio
+    asyncio.run(analyze_codebase(input("Enter the path to the codebase: ")))

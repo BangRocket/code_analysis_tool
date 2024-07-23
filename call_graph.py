@@ -55,9 +55,16 @@ def process_directory(directory):
     
     return combined_graph
 
-# Example usage
+import asyncio
+from rich.console import Console
+
+console = Console()
+
+async def generate_call_graph(path):
+    console.print("[cyan]Generating call graph...[/cyan]")
+    graph = process_directory(path)
+    visualize_call_graph(graph, "codebase_call_graph")
+    console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
+
 if __name__ == "__main__":
-    directory = "/path/to/your/codebase"
-    graph = process_directory(directory)
-    visualize_call_graph(graph, "call_graph")
-    print("Call graph generated as call_graph.png")
+    asyncio.run(generate_call_graph(input("Enter the path to the codebase: ")))

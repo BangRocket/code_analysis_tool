@@ -113,7 +113,17 @@ def generate_documentation(analysis_results, call_graph, output_dir):
 
     print(f"Documentation generated in {output_dir}")
 
-if __name__ == "__main__":
+import asyncio
+from rich.console import Console
+
+console = Console()
+
+async def generate_documentation(path):
+    console.print("[cyan]Generating documentation...[/cyan]")
     analysis_results = load_analysis_results('analysis_results.json')
     call_graph = nx.node_link_graph(analysis_results['call_graph'])
     generate_documentation(analysis_results, call_graph, 'docs')
+    console.print("[green]Documentation generated in docs/ folder[/green]")
+
+if __name__ == "__main__":
+    asyncio.run(generate_documentation(input("Enter the path to the codebase: ")))
