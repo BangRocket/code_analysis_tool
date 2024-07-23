@@ -2,9 +2,19 @@ import os
 import ast
 import json
 import subprocess
+import logging
 from rich.console import Console
 
 console = Console()
+
+# Create necessary directories
+os.makedirs('temp', exist_ok=True)
+os.makedirs('logs', exist_ok=True)
+os.makedirs('docs', exist_ok=True)
+
+# Set up logging
+logging.basicConfig(filename='logs/call_graph.log', level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 def parse_file(file_path):
     with open(file_path, 'r') as file:
@@ -53,20 +63,28 @@ async def generate_call_graph(path):
     calls = process_directory(path)
     code2flow_input = generate_code2flow_input(calls)
     
-    with open('code2flow_input.json', 'w') as f:
+    input_file = 'temp/code2flow_input.json'
+    output_file = 'docs/codebase_call_graph.png'
+    
+    with open(input_file, 'w') as f:
         f.write(code2flow_input)
     
     try:
-        subprocess.run(['code2flow', 'code2flow_input.json', '-o', 'codebase_call_graph.png', '--language', 'py'], check=True)
-        console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
+        subprocess.run(['code2flow', input_file, '-o', output_file, '--language', 'py'], check=True)
+        console.print(f"[green]Call graph generated as {output_file}[/green]")
+        logging.info(f"Call graph generated successfully: {output_file}")
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error: Failed to generate call graph. Error message: {e}[/red]")
-        console.print("[yellow]Command used: code2flow code2flow_input.json -o codebase_call_graph.png --language py[/yellow]")
+        error_msg = f"Error: Failed to generate call graph. Error message: {e}"
+        console.print(f"[red]{error_msg}[/red]")
+        console.print(f"[yellow]Command used: code2flow {input_file} -o {output_file} --language py[/yellow]")
+        logging.error(error_msg)
     except FileNotFoundError:
-        console.print("[red]Error: code2flow not found. Please install it using 'pip install code2flow'.[/red]")
+        error_msg = "Error: code2flow not found. Please install it using 'pip install code2flow'."
+        console.print(f"[red]{error_msg}[/red]")
+        logging.error(error_msg)
     
     # Clean up the temporary input file
-    os.remove('code2flow_input.json')
+    os.remove(input_file)
 
 if __name__ == "__main__":
     import asyncio
