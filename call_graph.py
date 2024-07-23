@@ -1,7 +1,10 @@
-import ast
 import os
-import networkx as nx
-from graphviz import Digraph
+import ast
+import json
+import subprocess
+from rich.console import Console
+
+console = Console()
 
 def parse_file(file_path):
     with open(file_path, 'r') as file:
@@ -23,48 +26,47 @@ def extract_calls(node, current_function=None):
 
 def create_call_graph(file_path):
     tree = parse_file(file_path)
-    calls = extract_calls(tree)
-    
-    G = nx.DiGraph()
-    for caller, callee in calls:
-        G.add_edge(caller, callee)
-    
-    return G
-
-def visualize_call_graph(G, output_file):
-    dot = Digraph(comment='Call Graph')
-    dot.attr(rankdir='LR', size='8,5')
-    
-    for node in G.nodes():
-        dot.node(node, shape='box')
-    
-    for edge in G.edges():
-        dot.edge(edge[0], edge[1])
-    
-    dot.render(output_file, format='png', cleanup=True)
+    return extract_calls(tree)
 
 def process_directory(directory):
-    combined_graph = nx.DiGraph()
+    combined_calls = []
     
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith('.py'):  # Adjust this for the file types you want to analyze
+            if file.endswith('.py'):
                 file_path = os.path.join(root, file)
-                file_graph = create_call_graph(file_path)
-                combined_graph = nx.compose(combined_graph, file_graph)
+                file_calls = create_call_graph(file_path)
+                combined_calls.extend(file_calls)
     
-    return combined_graph
+    return combined_calls
 
-import asyncio
-from rich.console import Console
-
-console = Console()
+def generate_code2flow_input(calls):
+    code2flow_input = {}
+    for caller, callee in calls:
+        if caller not in code2flow_input:
+            code2flow_input[caller] = []
+        code2flow_input[caller].append(callee)
+    return json.dumps(code2flow_input)
 
 async def generate_call_graph(path):
     console.print("[cyan]Generating call graph...[/cyan]")
-    graph = process_directory(path)
-    visualize_call_graph(graph, "codebase_call_graph")
-    console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
+    calls = process_directory(path)
+    code2flow_input = generate_code2flow_input(calls)
+    
+    with open('code2flow_input.json', 'w') as f:
+        f.write(code2flow_input)
+    
+    try:
+        subprocess.run(['code2flow', 'code2flow_input.json', '-o', 'codebase_call_graph.png'], check=True)
+        console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
+    except subprocess.CalledProcessError:
+        console.print("[red]Error: Failed to generate call graph. Make sure code2flow is installed.[/red]")
+    except FileNotFoundError:
+        console.print("[red]Error: code2flow not found. Please install it using 'pip install code2flow'.[/red]")
+    
+    # Clean up the temporary input file
+    os.remove('code2flow_input.json')
 
 if __name__ == "__main__":
+    import asyncio
     asyncio.run(generate_call_graph(input("Enter the path to the codebase: ")))
