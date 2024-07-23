@@ -16,10 +16,8 @@ def create_call_graph_html(call_graph):
         net.add_edge(edge[0], edge[1])
     return net.generate_html()
 
-def generate_documentation(analysis_results, call_graph, output_dir):
+def generate_documentation(cache, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-
-    # Generate index.html
     index_template = Template('''
     <!DOCTYPE html>
     <html lang="en">
@@ -47,9 +45,9 @@ def generate_documentation(analysis_results, call_graph, output_dir):
                             <li class="nav-item">
                                 <a class="nav-link" href="#file-analyses">File Analyses</a>
                                 <ul class="nav flex-column ms-3">
-                                    {% for file in analysis_results['file_analyses'] %}
+                                    {% for file_path, details in cache.items() %}
                                     <li class="nav-item">
-                                        <a class="nav-link" href="#{{ file['file_path']|replace('/', '-') }}">{{ file['file_path'] }}</a>
+                                        <a class="nav-link" href="#{{ file_path|replace('/', '-') }}">{{ file_path }}</a>
                                     </li>
                                     {% endfor %}
                                 </ul>
@@ -65,7 +63,7 @@ def generate_documentation(analysis_results, call_graph, output_dir):
                         <h2>Global Analysis</h2>
                         <div class="card">
                             <div class="card-body">
-                                {{ analysis_results['global_analysis']|safe }}
+                                {{ cache['global_analysis']|safe }}
                             </div>
                         </div>
                     </section>
@@ -74,21 +72,26 @@ def generate_documentation(analysis_results, call_graph, output_dir):
                         <h2>Call Graph</h2>
                         <div class="card">
                             <div class="card-body">
-                                {{ call_graph_html|safe }}
+                                {{ cache['call_graph_html']|safe }}
                             </div>
                         </div>
                     </section>
 
                     <section id="file-analyses">
                         <h2>File Analyses</h2>
-                        {% for file in analysis_results['file_analyses'] %}
-                        <div class="card mb-3" id="{{ file['file_path']|replace('/', '-') }}">
+                        {% for file_path, details in cache.items() %}
+                        <div class="card mb-3" id="{{ file_path|replace('/', '-') }}">
                             <div class="card-header">
-                                <h3>{{ file['file_path'] }}</h3>
+                                <h3>{{ file_path }}</h3>
                             </div>
                             <div class="card-body">
-                                <h4>File Type: {{ file['file_type'] }}</h4>
-                                {{ file['analysis']|safe }}
+                                <h4>File Type: {{ details['details']['file_type'] }}</h4>
+                                <p>Purpose: {{ details['details']['purpose'] }}</p>
+                                <ul>
+                                    {% for func in details['details']['main_functions'] %}
+                                    <li>{{ func }}</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                         {% endfor %}
@@ -100,17 +103,8 @@ def generate_documentation(analysis_results, call_graph, output_dir):
     </body>
     </html>
     ''')
-
-    call_graph_html = create_call_graph_html(call_graph)
-
-    index_html = index_template.render(
-        analysis_results=analysis_results,
-        call_graph_html=call_graph_html
-    )
-
     with open(os.path.join(output_dir, 'index.html'), 'w') as f:
         f.write(index_html)
-
     print(f"Documentation generated in {output_dir}")
 
 import asyncio
