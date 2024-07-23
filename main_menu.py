@@ -1,5 +1,5 @@
 import asyncio
-from code_analyzer import analyze_codebase
+import code_analyzer
 from call_graph import generate_call_graph
 from generate_documentation import generate_documentation
 
@@ -27,13 +27,13 @@ async def main_menu():
             choice = input("Enter your choice: ")
 
             if choice == '1':
-                await analyze_codebase(path)
+                await code_analyzer.analyze_codebase(path)
             elif choice == '2':
                 await generate_call_graph(path)
             elif choice == '3':
                 await generate_documentation(path)
             elif choice == '4':
-                await analyze_codebase(path)
+                await code_analyzer.analyze_codebase(path)
                 await generate_call_graph(path)
                 await generate_documentation(path)
             elif choice == '5':

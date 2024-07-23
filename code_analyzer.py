@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import ast
 import re
 from collections import defaultdict
-from main_menu import main_menu
+# Remove the import of main_menu
 
 # Load environment variables
 load_dotenv()
