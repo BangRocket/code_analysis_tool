@@ -18,8 +18,7 @@ import matplotlib.pyplot as plt
 import ast
 import re
 from collections import defaultdict
-from call_graph import process_directory, visualize_call_graph
-from generate_documentation import generate_documentation
+from main_menu import main_menu
 
 # Load environment variables
 load_dotenv()
@@ -558,21 +557,16 @@ def create_file_tree(path):
     add_to_tree(path, tree)
     return tree
 
-async def main():
-    parser = argparse.ArgumentParser(description="Analyze a codebase")
-    parser.add_argument("path", help="Path to the codebase")
-    parser.add_argument("--output", help="Output file path", default="analysis_results.json")
-    args = parser.parse_args()
-
+async def analyze_codebase(path):
     console.print(Panel.fit("[bold yellow]Code Analysis Tool[/bold yellow]"))
     
-    file_tree = create_file_tree(args.path)
+    file_tree = create_file_tree(path)
     console.print(file_tree)
     
     console.print("[bold green]Starting analysis...[/bold green]")
 
     files_to_process = []
-    for root, dirs, files in os.walk(args.path):
+    for root, dirs, files in os.walk(path):
         for file in files:
             if file.endswith(('.py', '.js', '.cpp', '.h', '.hpp', '.java', '.cs')):
                 full_path = os.path.join(root, file)
@@ -593,18 +587,6 @@ async def main():
     with Live(progress, refresh_per_second=10):
         results = await process_files(files_to_process, progress, cache)
 
-        # Generate and analyze call graph
-        progress.update(task, description="[cyan]Generating call graph...[/cyan]")
-        call_graph = process_directory(args.path)
-        call_graph_data = nx.node_link_data(call_graph)
-        visualize_call_graph(call_graph, "codebase_call_graph")
-        progress.update(task, advance=1, description="[green]Call graph generated[/green]")
-
-        # Analyze call graph with LLM
-        progress.update(task, description="[cyan]Analyzing call graph...[/cyan]")
-        call_graph_analysis = await analyze_call_graph_with_llm(call_graph)
-        progress.update(task, advance=1, description="[green]Call graph analyzed[/green]")
-
         # Perform global analysis
         progress.update(task, description="[cyan]Performing global analysis...[/cyan]")
         global_result = await global_analysis(results, progress)
@@ -617,27 +599,30 @@ async def main():
     console.print(Markdown(global_result))
     console.print("\n")
 
-    console.print(Panel("[bold blue]Call Graph Analysis[/bold blue]"))
-    console.print(Markdown(call_graph_analysis))
-    console.print("\n")
-
     # Save results
     full_results = {
         "global_analysis": global_result,
-        "call_graph_analysis": call_graph_analysis,
         "file_analyses": results,
-        "call_graph": call_graph_data
     }
-    with open(args.output, 'w') as outfile:
+    with open("analysis_results.json", 'w') as outfile:
         json.dump(full_results, outfile, indent=2)
     
     save_cache(cache)
-
-    # Generate HTML documentation
-    generate_documentation(full_results, call_graph, 'docs')
     
-    console.print(f"[bold blue]Full analysis results saved to {args.output}[/bold blue]")
-    console.print("[bold green]Codebase call graph saved as codebase_call_graph.png[/bold green]")
+    console.print(f"[bold blue]Full analysis results saved to analysis_results.json[/bold blue]")
+
+async def generate_call_graph(path):
+    console.print("[cyan]Generating call graph...[/cyan]")
+    call_graph = process_directory(path)
+    visualize_call_graph(call_graph, "codebase_call_graph")
+    console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
+
+async def generate_documentation(path):
+    console.print("[cyan]Generating documentation...[/cyan]")
+    analysis_results = load_analysis_results('analysis_results.json')
+    call_graph = process_directory(path)
+    generate_documentation(analysis_results, call_graph, 'docs')
+    console.print("[green]Documentation generated in docs/ folder[/green]")
 
 # New function to analyze call graph with LLM
 async def analyze_call_graph_with_llm(call_graph):
@@ -670,4 +655,4 @@ async def analyze_call_graph_with_llm(call_graph):
                         return "Error in analyzing call graph"
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main_menu())
