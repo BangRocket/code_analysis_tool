@@ -2,3 +2,8 @@
 .env
 *.json
 *.pyc
+.aider*
+temp
+logs
+docs
+CONVENTIONS.md
