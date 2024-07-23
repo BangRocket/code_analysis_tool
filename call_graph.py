@@ -57,10 +57,11 @@ async def generate_call_graph(path):
         f.write(code2flow_input)
     
     try:
-        subprocess.run(['code2flow', 'code2flow_input.json', '-o', 'codebase_call_graph.png', '--language', 'python'], check=True)
+        subprocess.run(['code2flow', 'code2flow_input.json', '-o', 'codebase_call_graph.png', '--language', 'py'], check=True)
         console.print("[green]Call graph generated as codebase_call_graph.png[/green]")
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error: Failed to generate call graph. Error message: {e}[/red]")
+        console.print("[yellow]Command used: code2flow code2flow_input.json -o codebase_call_graph.png --language py[/yellow]")
     except FileNotFoundError:
         console.print("[red]Error: code2flow not found. Please install it using 'pip install code2flow'.[/red]")
     
