@@ -2,12 +2,13 @@ import asyncio
 import code_analyzer
 from call_graph import generate_call_graph
 from generate_documentation import generate_documentation
+import os
 
 async def main_menu():
     print("Welcome to the Codebase Analysis Tool")
     
     while True:
-        path = input("Enter the path to the codebase (or 'q' to quit): ")
+        path = input("Enter the path to the codebase (or 'q' to quit): ") #/home/heidornj/workspaces/aider-chat/autogen/autogen/
         if path.lower() == 'q':
             break
 
