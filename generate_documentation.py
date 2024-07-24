@@ -39,6 +39,7 @@ def create_call_graph_html(call_graph):
 
 def generate_documentation_html(analysis_results, output_dir, call_graph=None):
     os.makedirs(output_dir, exist_ok=True)
+    cache = analysis_results['file_analyses']
     index_template = Template('''
     <!DOCTYPE html>
     <html lang="en">
@@ -140,7 +141,8 @@ def generate_documentation_html(analysis_results, output_dir, call_graph=None):
     index_html = index_template.render(
         analysis_results=analysis_results,
         call_graph_html=call_graph_html,
-        global_analysis_chunks=global_analysis_chunks
+        global_analysis_chunks=global_analysis_chunks,
+        cache=cache
     )
 
     with open(os.path.join(output_dir, 'index.html'), 'w') as f:
