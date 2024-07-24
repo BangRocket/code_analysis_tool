@@ -372,9 +372,15 @@ def read_file_safely(file_path):
     raise ValueError(f"Unable to read {file_path} with any of the attempted encodings")
 
 def update_cache(cache, file_path, file_hash_value, analysis_result):
+    # Extracting essential details from analysis_result
+    essential_details = {
+        'file_type': analysis_result['file_type'],
+        'main_functions': re.findall(r'\*\*(.*?)\*\*', analysis_result['analysis']),
+        'purpose': re.search(r'## Overall Purpose\s+([^#]+)', analysis_result['analysis']).group(1).strip() if re.search(r'## Overall Purpose\s+([^#]+)', analysis_result['analysis']) else 'Not specified'
+    }
     cache[file_path] = {
         'hash': file_hash_value,
-        'analysis': analysis_result
+        'details': essential_details
     }
     save_cache(cache)
 
