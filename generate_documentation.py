@@ -39,7 +39,7 @@ def create_call_graph_html(call_graph):
 
 def generate_documentation_html(analysis_results, output_dir, call_graph=None):
     os.makedirs(output_dir, exist_ok=True)
-    cache = analysis_results['file_analyses']
+    file_analyses = analysis_results['file_analyses']
     index_template = Template('''
     <!DOCTYPE html>
     <html lang="en">
@@ -69,9 +69,9 @@ def generate_documentation_html(analysis_results, output_dir, call_graph=None):
                             <li class="nav-item">
                                 <a class="nav-link" href="#file-analyses">File Analyses</a>
                                 <ul class="nav flex-column ms-3">
-                                    {% for file_path, details in cache.items() %}
+                                    {% for file in file_analyses %}
                                     <li class="nav-item">
-                                        <a class="nav-link" href="#{{ file_path|replace('/', '-') }}">{{ file_path }}</a>
+                                        <a class="nav-link" href="#{{ file.file_path|replace('/', '-') }}">{{ file.file_path }}</a>
                                     </li>
                                     {% endfor %}
                                 </ul>
@@ -107,14 +107,14 @@ def generate_documentation_html(analysis_results, output_dir, call_graph=None):
 
                     <section id="file-analyses">
                         <h2>File Analyses</h2>
-                        {% for file_path, details in cache.items() %}
-                        <div class="card mb-3" id="{{ file_path|replace('/', '-') }}">
+                        {% for file in file_analyses %}
+                        <div class="card mb-3" id="{{ file.file_path|replace('/', '-') }}">
                             <div class="card-header">
-                                <h3>{{ file_path }}</h3>
+                                <h3>{{ file.file_path }}</h3>
                             </div>
                             <div class="card-body">
-                                <h4>File Type: {{ file['file_type'] }}</h4>
-                                {% for chunk in file['analysis_chunks'] %}
+                                <h4>File Type: {{ file.file_type }}</h4>
+                                {% for chunk in file.analysis_chunks %}
                                     {{ chunk|safe }}
                                 {% endfor %}
                             </div>
@@ -142,7 +142,7 @@ def generate_documentation_html(analysis_results, output_dir, call_graph=None):
         analysis_results=analysis_results,
         call_graph_html=call_graph_html,
         global_analysis_chunks=global_analysis_chunks,
-        cache=cache
+        file_analyses=file_analyses
     )
 
     with open(os.path.join(output_dir, 'index.html'), 'w') as f:
