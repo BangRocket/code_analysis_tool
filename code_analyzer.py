@@ -544,7 +544,7 @@ async def process_file(file_path, progress, cache):
         progress.update(progress.task_ids[0], advance=1, description=f"[red]Failed: {os.path.basename(file_path)}[/red]")
         return None
 async def process_files(files, progress, cache):
-    tasks = [process_file(file_path, progress, cache) for file_path in files]
+    tasks = [process_file(file_path, progress, cache) for file_path in files if not any(part.startswith('.') for part in file_path.split(os.sep))]
     results = await asyncio.gather(*tasks)
     return [result for result in results if result is not None]
 
@@ -573,6 +573,8 @@ async def analyze_codebase(path):
 
     files_to_process = []
     for root, dirs, files in os.walk(path):
+        # Remove directories that start with a dot
+        dirs[:] = [d for d in dirs if not d.startswith('.')]
         for file in files:
             if file.endswith(('.py', '.js', '.cpp', '.h', '.hpp', '.java', '.cs')):
                 full_path = os.path.join(root, file)
