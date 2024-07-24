@@ -135,7 +135,14 @@ console = Console()
 async def generate_documentation(path):
     console.print("[cyan]Generating documentation...[/cyan]")
     analysis_results = load_analysis_results('analysis_results.json')
-    call_graph = nx.node_link_graph(analysis_results['call_graph'])
+    
+    # Check if 'call_graph' exists in analysis_results, if not, create an empty graph
+    if 'call_graph' in analysis_results:
+        call_graph = nx.node_link_graph(analysis_results['call_graph'])
+    else:
+        console.print("[yellow]Warning: No call graph data found. Creating an empty graph.[/yellow]")
+        call_graph = nx.DiGraph()
+    
     generate_documentation(analysis_results, call_graph, 'docs')
     console.print("[green]Documentation generated in docs/ folder[/green]")
 
