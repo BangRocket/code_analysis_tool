@@ -3,10 +3,31 @@ import json
 from jinja2 import Template
 import networkx as nx
 from pyvis.network import Network
+import tiktoken
 
 def load_analysis_results(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
+
+def split_content(content, max_tokens=4000):
+    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    tokens = encoding.encode(content)
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for token in tokens:
+        if current_length + 1 > max_tokens:
+            chunks.append(encoding.decode(current_chunk))
+            current_chunk = []
+            current_length = 0
+        current_chunk.append(token)
+        current_length += 1
+
+    if current_chunk:
+        chunks.append(encoding.decode(current_chunk))
+
+    return chunks
 
 def create_call_graph_html(call_graph):
     net = Network(notebook=True, directed=True)
@@ -63,7 +84,9 @@ def generate_documentation(cache, output_dir):
                         <h2>Global Analysis</h2>
                         <div class="card">
                             <div class="card-body">
-                                {{ cache['global_analysis']|safe }}
+                                {% for chunk in global_analysis_chunks %}
+                                    {{ chunk|safe }}
+                                {% endfor %}
                             </div>
                         </div>
                     </section>
@@ -85,13 +108,10 @@ def generate_documentation(cache, output_dir):
                                 <h3>{{ file_path }}</h3>
                             </div>
                             <div class="card-body">
-                                <h4>File Type: {{ details['details']['file_type'] }}</h4>
-                                <p>Purpose: {{ details['details']['purpose'] }}</p>
-                                <ul>
-                                    {% for func in details['details']['main_functions'] %}
-                                    <li>{{ func }}</li>
-                                    {% endfor %}
-                                </ul>
+                                <h4>File Type: {{ file['file_type'] }}</h4>
+                                {% for chunk in file['analysis_chunks'] %}
+                                    {{ chunk|safe }}
+                                {% endfor %}
                             </div>
                         </div>
                         {% endfor %}
