@@ -37,7 +37,7 @@ def create_call_graph_html(call_graph):
         net.add_edge(edge[0], edge[1])
     return net.generate_html()
 
-def generate_documentation(cache, output_dir):
+def generate_documentation(analysis_results, output_dir, call_graph=None):
     os.makedirs(output_dir, exist_ok=True)
     index_template = Template('''
     <!DOCTYPE html>
@@ -60,9 +60,11 @@ def generate_documentation(cache, output_dir):
                             <li class="nav-item">
                                 <a class="nav-link active" href="#global-analysis">Global Analysis</a>
                             </li>
+                            {% if call_graph_html %}
                             <li class="nav-item">
                                 <a class="nav-link" href="#call-graph">Call Graph</a>
                             </li>
+                            {% endif %}
                             <li class="nav-item">
                                 <a class="nav-link" href="#file-analyses">File Analyses</a>
                                 <ul class="nav flex-column ms-3">
@@ -91,6 +93,7 @@ def generate_documentation(cache, output_dir):
                         </div>
                     </section>
 
+                    {% if call_graph_html %}
                     <section id="call-graph">
                         <h2>Call Graph</h2>
                         <div class="card">
@@ -99,6 +102,7 @@ def generate_documentation(cache, output_dir):
                             </div>
                         </div>
                     </section>
+                    {% endif %}
 
                     <section id="file-analyses">
                         <h2>File Analyses</h2>
@@ -123,6 +127,22 @@ def generate_documentation(cache, output_dir):
     </body>
     </html>
     ''')
+
+    call_graph_html = create_call_graph_html(call_graph) if call_graph else None
+
+    # Split global analysis into chunks
+    global_analysis_chunks = split_content(analysis_results['global_analysis'])
+
+    # Split file analyses into chunks
+    for file in analysis_results['file_analyses']:
+        file['analysis_chunks'] = split_content(file['analysis'])
+
+    index_html = index_template.render(
+        analysis_results=analysis_results,
+        call_graph_html=call_graph_html,
+        global_analysis_chunks=global_analysis_chunks
+    )
+
     with open(os.path.join(output_dir, 'index.html'), 'w') as f:
         f.write(index_html)
     print(f"Documentation generated in {output_dir}")
@@ -136,14 +156,14 @@ async def generate_documentation(path):
     console.print("[cyan]Generating documentation...[/cyan]")
     analysis_results = load_analysis_results('analysis_results.json')
     
-    # Check if 'call_graph' exists in analysis_results, if not, create an empty graph
+    # Check if 'call_graph' exists in analysis_results
     if 'call_graph' in analysis_results:
         call_graph = nx.node_link_graph(analysis_results['call_graph'])
     else:
-        console.print("[yellow]Warning: No call graph data found. Creating an empty graph.[/yellow]")
-        call_graph = nx.DiGraph()
+        console.print("[yellow]Warning: No call graph data found. Call graph will be omitted from the documentation.[/yellow]")
+        call_graph = None
     
-    generate_documentation(analysis_results, call_graph, 'docs')
+    generate_documentation(analysis_results, 'docs', call_graph)
     console.print("[green]Documentation generated in docs/ folder[/green]")
 
 if __name__ == "__main__":
