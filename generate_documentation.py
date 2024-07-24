@@ -37,7 +37,7 @@ def create_call_graph_html(call_graph):
         net.add_edge(edge[0], edge[1])
     return net.generate_html()
 
-def generate_documentation(analysis_results, output_dir, call_graph=None):
+def generate_documentation_html(analysis_results, output_dir, call_graph=None):
     os.makedirs(output_dir, exist_ok=True)
     index_template = Template('''
     <!DOCTYPE html>
@@ -163,7 +163,7 @@ async def generate_documentation(path):
         console.print("[yellow]Warning: No call graph data found. Call graph will be omitted from the documentation.[/yellow]")
         call_graph = None
     
-    generate_documentation(analysis_results, 'docs', call_graph)
+    generate_documentation_html(analysis_results, 'docs', call_graph)
     console.print("[green]Documentation generated in docs/ folder[/green]")
 
 if __name__ == "__main__":
